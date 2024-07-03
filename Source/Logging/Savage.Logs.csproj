@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Attribution -->
+  <PropertyGroup>
+    <Authors>Nate Savage</Authors>
+    <Copyright>Nate Savage</Copyright>
+    <RootNamespace>Savage.Logs</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Dotnet Configuration -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <!-- Nuget Publishing Configuration -->
+  <PropertyGroup>
+    <Title>Savage Logs</Title>
+    <Description></Description>
+    <PackageTags></PackageTags>
+    <Version>2.0.0</Version>
+
+    <PackageReleaseNotes>  </PackageReleaseNotes>
+
+    <NeutralLanguage>en</NeutralLanguage>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/NateSavage/Savage.Logs</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/NateSavage/Savage.Logs</RepositoryUrl>
+
+    <PackageLicenseFile>LICENSE.MD</PackageLicenseFile>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Attribution -->
+  <PropertyGroup>
+    <Authors>Nate Savage</Authors>
+    <Copyright>Nate Savage</Copyright>
+    <RootNamespace>Savage.Logs.Godot</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Dotnet Configuration -->
+  <!-- 
+         Godot 3 targets  .NET framework 4.7.2 and C# 7.3        (Mono backend)
+         Godot 4 targets  .NET 6 and C# 10                       (CoreCLR backend, Roslyn compiler)
+         Godot 4 supports .NET 8 and C# 12                       (CoreCLR backend, Roslyn compiler)
+    -->
+  <PropertyGroup>
+    <TargetFramework>net6</TargetFramework>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+
+  <!-- Nuget Publishing Configuration -->
+  <PropertyGroup>
+    <Title>Loggy Godot</Title>
+    <Description>Integrates Savage.Logs with Godot's editor console. Also includes some Godot specific log decorations.</Description>
+    <TargetFramework>net6</TargetFramework>
+    <Version>2.0.0</Version>
+
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageProjectUrl>https://github.com/NateSavage/Savage.Logs</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/NateSavage/Savage.Logs</RepositoryUrl>
+
+  </PropertyGroup>
+
+  <!-- Nuget Packages -->
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="4.3.0-dev.4">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Savage.Logs.csproj" />
+  </ItemGroup>
+
+</Project>

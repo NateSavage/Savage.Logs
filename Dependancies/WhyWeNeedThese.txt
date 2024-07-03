@@ -1,0 +1,1 @@
+System.Drawing.Primitives is required so that we can convert color hex codes into the System.ConsoleColor enum (damn you and your limited color support legacy windows terminal)
