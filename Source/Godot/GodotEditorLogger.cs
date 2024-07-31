@@ -12,11 +12,11 @@ public class GodotEditorLogger : ILogSink {
     public LogSinkSettings Settings { get; }
 
     // state
-    private StringBuilder logWriter = new StringBuilder();
+    readonly StringBuilder logWriter = new StringBuilder();
 
     #region Construction
-    public GodotEditorLogger() {
-
+    public GodotEditorLogger(LogSinkSettings settings) {
+        Settings = settings;
     }
 
     #endregion Construction
@@ -29,6 +29,7 @@ public class GodotEditorLogger : ILogSink {
         switch (entry.Verbosity) {
             default:
             case Verbosity.Trace:
+            case Verbosity.Audit:
             case Verbosity.Debug:
             case Verbosity.Info:
                 GD.Print(message);
@@ -51,11 +52,11 @@ public class GodotEditorLogger : ILogSink {
 
     private void InsertEntryInto(StringBuilder writer, LogEntry entry) {
 
+        if (Settings.DisplayVerbosity)
+            writer.Append($"{entry.Verbosity}: ");
+        
         foreach (var decoration in entry.Decorations.InlinePreceding)
             WriteInlineDecorationNoColor(writer, decoration);
-
-        //if (Settings.DisplayVerbosity)
-        writer.Append($"{entry.Verbosity}: ");
 
         writer.Append(entry.Message);
 
@@ -68,10 +69,10 @@ public class GodotEditorLogger : ILogSink {
 
     private void WriteInlineDecorationNoColor(StringBuilder writer, LogDecoration decoration) {
         if (decoration.ShowTag) {
-            writer.Append($"{decoration.Tag}: ");
+            writer.Append($"[{decoration.Tag}] ");
         }
 
-        writer.Append($"{decoration.Value} ");
+        writer.Append($"{decoration.Value}: ");
     }
 
     private void WriteFollowingLineNoColor(StringBuilder writer, LogDecoration decoration) {
@@ -95,9 +96,14 @@ public class GodotEditorLogger : ILogSink {
 public static partial class LogPipelineExtensions {
 
     /// <inheritdoc cref="GodotEditorLogger"/>
-    public static LogPipeline SinkGodotEditorIfEditorBuild(this LogPipeline pipeline) {
-        if (OS.HasFeature("editor"))
-            pipeline.Add(new GodotEditorLogger());
+    public static LogPipeline SinkGodotEditorIfEditorBuild(this LogPipeline pipeline, LogSinkSettings settings = null) {
+        if (OS.HasFeature("editor")) {
+            if (settings is null)
+                settings = new LogSinkSettings();
+            
+            pipeline.Add(new GodotEditorLogger(settings));
+        }
+           
 
         return pipeline;
     }

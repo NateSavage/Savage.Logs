@@ -12,7 +12,7 @@ public class ClientServerDecoration : LogDecoration {
 
     public override Type Type => typeof(int);
 
-    public override DisplayLocation Location => DisplayLocation.InlinePreceding;
+    public override DisplayLocation Location => DisplayLocation.Preceding;
     public override int DisplayPriority => -3_001;
 
     public ClientServerDecoration(bool isServer) {

@@ -21,16 +21,13 @@ namespace Savage.Logs.LogDecorations {
 
         public override ThreadRequirement ThreadRequirement => ThreadRequirement.Source;
 
-        public override DisplayLocation Location => DisplayLocation.InlinePreceding;
+        public override DisplayLocation Location => DisplayLocation.Preceding;
 
         public override int DisplayPriority => -9_900;
-
-
 
         public ThreadIDDecoration() {
             contents =  Thread.CurrentThread.ManagedThreadId.ToString();
         }
-
 
     }
 }

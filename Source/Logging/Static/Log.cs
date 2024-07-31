@@ -20,6 +20,7 @@ namespace Savage.Logs {
         public static void Message(Verbosity verbosity, string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(verbosity, message, callerPath, decorations);
 
         public static void Trace(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(Verbosity.Trace, message, callerPath, decorations);
+        public static void Audit(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(Verbosity.Audit, message, callerPath, decorations);
         public static void Debug(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(Verbosity.Debug, message, callerPath, decorations);
         public static void Info(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(Verbosity.Info, message, callerPath, decorations);
         public static void Warning(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => GlobalLogPipeline.BroadcastLog(Verbosity.Warning, message, callerPath, decorations);

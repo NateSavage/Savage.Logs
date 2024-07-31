@@ -12,7 +12,7 @@ public class NetIdDecoration : LogDecoration {
 
     public override Type Type => typeof(int);
 
-    public override DisplayLocation Location => DisplayLocation.InlinePreceding;
+    public override DisplayLocation Location => DisplayLocation.Preceding;
     public override int DisplayPriority => -3_000;
 
     public NetIdDecoration(int id) {

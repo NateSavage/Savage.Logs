@@ -12,7 +12,13 @@ namespace Savage.Logs {
         /// Example: record the configuration settings that are about to be used for an operation. <br/>
         /// Example: record the individual steps of a multi stage transaction. <br/>
         /// </remarks>
-        Trace = 5,
+        Trace = 6,
+        
+        /// <summary> For recording information about data integrity or the final result of operations that may need to be reviewed in the future. </summary>
+        /// <remarks>
+        /// Example: record who did what in a database transaction so that it can be traced at some point in the future.
+        /// </remarks>
+        Audit = 5,
 
         /// <summary> Messages that are intended to help non programmers (IT, sysadmins, users) diagnose and solve issues with your program that shouldn't require code changes. </summary>
 		/// <remarks> Example: let the user know their configuration/environment needs adjusting and how to do so. </remarks>

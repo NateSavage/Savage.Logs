@@ -19,7 +19,7 @@ namespace Savage.Logs {
     }
 
     public static partial class LogPipelineExtensions {
-        public static LogPipeline AttachWriteTime(this LogPipeline pipeline, string dateTimeFormat = "MM/dd/yyyy hh:mm:ss:ffff tt", DisplayLocation displayLocation = DisplayLocation.InlinePreceding) {
+        public static LogPipeline AttachWriteTime(this LogPipeline pipeline, string dateTimeFormat = "MM/dd/yyyy hh:mm:ss:ffff tt", DisplayLocation displayLocation = DisplayLocation.Preceding) {
             pipeline.Add(new WriteTimeDecorationGenerator(dateTimeFormat, displayLocation));
             return pipeline;
         }

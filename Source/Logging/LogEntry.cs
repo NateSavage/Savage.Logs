@@ -32,10 +32,7 @@ namespace Savage.Logs {
         public LogEntry(string message, Verbosity verbosity, IEnumerable<LogDecoration> decorations) {
             Message = message;
             Verbosity = verbosity;
-            if (decorations is null)
-                Decorations = new DecorationContainer();
-            else
-                Decorations = new DecorationContainer(decorations);
+            Decorations = new DecorationContainer(decorations);
         }
 
 

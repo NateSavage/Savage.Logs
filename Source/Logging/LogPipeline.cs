@@ -12,7 +12,7 @@ using System.Linq;
 using Savage.Logs.LogDecorations;
 
 [assembly: InternalsVisibleTo("Savage.Logs.Benchmarks")]
-[assembly: InternalsVisibleTo("Loggy.Tests")]
+[assembly: InternalsVisibleTo("Savage.Logs.Tests")]
 
 namespace Savage.Logs {
 
@@ -54,17 +54,18 @@ namespace Savage.Logs {
         public LogPipeline(LogPipelineSettings configuration, Theme theme) {
             lock (configurationLock) {
                 if (initialized) { // reset state that configuration should override
+                    // ReSharper disable once PossibleNullReferenceException
                     decorationGenerators.Clear();
                     AppDomain.CurrentDomain.UnhandledException -= LogUnhandledException;
                 }
                 else { // first time initialization only
-                    assertionListener = new AssertionListener(configuration.AssertionVerbosity, configuration.IncludeCallerFileNameForTrace);
+                    assertionListener = new AssertionListener(configuration.AssertionVerbosity, configuration.IncludeCallerFileName);
                     System.Diagnostics.Trace.Listeners.Add(assertionListener);
                 }
 
                 Settings = configuration;
                 Theme = theme;
-                CallerDecoration.InternalLocation = configuration.callerFileNameDisplayLocation;
+                CallerDecoration.InternalLocation = configuration.CallerFileNameDisplayLocation;
 
                 decorationGenerators = new List<DecorationGenerator>();
                 conditionalGenerators = new List<Func<LogEntry, LogDecoration>>();
@@ -85,7 +86,7 @@ namespace Savage.Logs {
 
                 Settings = configuration;
                 Theme = theme;
-                CallerDecoration.InternalLocation = configuration.callerFileNameDisplayLocation;
+                CallerDecoration.InternalLocation = configuration.CallerFileNameDisplayLocation;
 
                 decorationGenerators = new List<DecorationGenerator>();
                 conditionalGenerators = new List<Func<LogEntry, LogDecoration>>();
@@ -192,7 +193,9 @@ namespace Savage.Logs {
         // if Godot or Unity can't handle this, we should provide a separate place to store output sinks that require living on the main thread
         internal void BroadcastLog(Verbosity verbosity, string message, string callerPath, LogDecoration[] decorations = null) {
             lock (messageBuffer.FrontLock) {
-                var logEntry = new LogEntry(message, verbosity, decorations);
+
+                LogEntry logEntry;
+                logEntry = decorations is null ? new LogEntry(message, verbosity) : new LogEntry(message, verbosity, decorations);
 
                 if (verbosity > Settings.MinimumVerbosity)
                     return;
@@ -207,7 +210,6 @@ namespace Savage.Logs {
 
                 for (int i = 0; i < decorationGenerators.Count; ++i)
                     logEntry.Decorations.Add(decorationGenerators[i].Emit(ref logEntry));
-
 
                 foreach (ILogSink output in outputSinks)
                     output.Write(logEntry);

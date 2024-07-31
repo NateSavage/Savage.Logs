@@ -10,14 +10,14 @@ namespace Savage.Logs.Collections {
         /// <summary> When true there are no decorations inside this container. </summary>
        // public bool Empty { get; private set; }
 
-        /// <inheritdoc cref="DisplayLocation.InlinePreceding"/>
-        public SortedSet<LogDecoration> InlinePreceding { get; private set; } = new SortedSet<LogDecoration>();
+        /// <inheritdoc cref="DisplayLocation.Preceding"/>
+        public readonly SortedSet<LogDecoration> InlinePreceding = new SortedSet<LogDecoration>();
 
-        /// <inheritdoc cref="DisplayLocation.InlineTrailing"/>
-        public SortedSet<LogDecoration> InlineTrailing { get; private set; } = new SortedSet<LogDecoration>();
+        /// <inheritdoc cref="DisplayLocation.Trailing"/>
+        public readonly SortedSet<LogDecoration> InlineTrailing = new SortedSet<LogDecoration>();
 
         /// <inheritdoc cref="DisplayLocation.FollowingLine"/>
-        public SortedSet<LogDecoration> FollowingLine { get; private set; } = new SortedSet<LogDecoration>();
+        public readonly SortedSet<LogDecoration> FollowingLine = new SortedSet<LogDecoration>();
 
         #region Constructors
         /// <summary>
@@ -36,8 +36,8 @@ namespace Savage.Logs.Collections {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(LogDecoration decoration) {
             switch (decoration.Location) {
-                case DisplayLocation.InlinePreceding: InlinePreceding.Add(decoration); return;
-                case DisplayLocation.InlineTrailing: InlineTrailing.Add(decoration); return;
+                case DisplayLocation.Preceding: InlinePreceding.Add(decoration); return;
+                case DisplayLocation.Trailing: InlineTrailing.Add(decoration); return;
                 case DisplayLocation.FollowingLine: FollowingLine.Add(decoration); return;
                 default:
                     throw new NotImplementedException();

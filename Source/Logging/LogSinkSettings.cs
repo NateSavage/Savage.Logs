@@ -9,17 +9,14 @@ namespace Savage.Logs {
 
         /// <summary> Decorations that should be attached by the logger to all entries that pass through it. </summary>
         /// <remarks> <see cref="ILogSink"/> implementations should check if this is <see cref="DecorationContainer.Empty"/>. </remarks>
-        public List<DecorationGenerator> DecorationGenerators;
+        public readonly List<DecorationGenerator> DecorationGenerators;
 
         /// <summary> Functions that this sink will use to ignore or include messages. </summary>
-        public List<Predicate<LogEntry>> Filters;
+        public readonly List<Predicate<LogEntry>> Filters;
 
-        /// <summary> 
-        /// Whether verbosity information should be displayed as text for a message. <br/>
-        /// Monochrome themes will always display verbosity.
-        /// </summary>
-        public bool DisplayVerbosity { get => displayVerbosity || Theme.Monochrome; set => displayVerbosity = value; }
-        private bool displayVerbosity;
+        /// <summary> Whether verbosity information should be displayed as text for a message. </summary>
+        public bool DisplayVerbosity { get => displayVerbosity; set => displayVerbosity = value; } 
+        bool displayVerbosity;
 
         /// <summary> Colors this logger should use to display messages. </summary>
         public Theme Theme;
@@ -27,19 +24,28 @@ namespace Savage.Logs {
         #region Construction
 
         public LogSinkSettings() {
+            displayVerbosity = true;
             Theme = Theme.DefaultDarkTheme();
             Filters = new List<Predicate<LogEntry>>();
+            DecorationGenerators = new List<DecorationGenerator>();
         }
 
         public LogSinkSettings(Theme colors) {
+            displayVerbosity = true;
             Theme = colors;
             Filters = new List<Predicate<LogEntry>>();
+            DecorationGenerators = new List<DecorationGenerator>();
         }
 
         #endregion Construction
 
-        public LogSinkSettings AddFilter(Predicate<LogEntry> filter) {
+        public LogSinkSettings Add(Predicate<LogEntry> filter) {
             Filters.Add(filter);
+            return this;
+        }
+        
+        public LogSinkSettings Add(DecorationGenerator generator) {
+            DecorationGenerators.Add(generator);
             return this;
         }
     }
