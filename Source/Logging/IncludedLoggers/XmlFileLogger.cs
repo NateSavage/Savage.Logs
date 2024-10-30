@@ -6,9 +6,12 @@ using System.Xml;
 
 namespace Savage.Logs {
 
-    /// <summary> Listens to events from the <see cref=Log"/> class and writes them to an xml file. </summary>
+    /// <summary> Writes to an xml file in a location of your choosing. </summary>
     /// <remarks> You can have as many <see cref="XmlFileLogger"/>s as you like. </remarks>
-    public class XmlFileLogger : ILogSink, IDisposable {
+#if NET6_0_OR_GREATER
+    [StackTraceHidden]
+#endif
+    public class XmlFileLogger : PipelineNode, ILogSink, IDisposable {
 
         public LogSinkSettings Settings { get; set; }
 
@@ -21,7 +24,7 @@ namespace Savage.Logs {
         /// <param name="logName"> Name of the file that will contain the log, do not include the file type. </param>
         public XmlFileLogger(Uri logDirectory, string logName, LogSinkSettings settings = null) {
             absolutePath = Path.Combine(logDirectory.AbsolutePath, $"{logName}.xml");
-            try { stream = new FileStream(absolutePath, FileMode.Create); }
+            try { stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read); }
             catch (System.Exception exception) {
                 Log.Error(exception.Message);
                 Log.Error($"{nameof(XmlFileLogger)} will not be used.");
@@ -34,7 +37,7 @@ namespace Savage.Logs {
             };
             writer = XmlWriter.Create(stream, xmlSettings);
             writer.WriteStartDocument();
-            writer.WriteStartElement("Log", @"data:loggy");
+            writer.WriteStartElement("Log", @"data:savage.log");
             //LogPipeline.MessageLogged += Write;
         }
 
@@ -70,16 +73,18 @@ namespace Savage.Logs {
         }
     }
 
-    public static partial class LoggerExtensions {
+    public static partial class PipelineNodeExtensions {
 
-        public static LogPipeline SinkXmlFile(this LogPipeline pipeline, Uri logDirectory, string logName) {
-            pipeline.Add(new XmlFileLogger(logDirectory, logName));
-            return pipeline;
+        public static PipelineNode WriteToXmlFile(this PipelineNode parentNode, Uri logDirectory, string logName) {
+            var logger = new XmlFileLogger(logDirectory, logName);
+            parentNode.WriteTo(logger);
+            return logger;
         }
 
-        public static LogPipeline SinkXmlFile(this LogPipeline pipeline, Uri logDirectory, string logName, LogSinkSettings settings) {
-            pipeline.Add(new XmlFileLogger(logDirectory, logName, settings));
-            return pipeline;
+        public static PipelineNode WriteToXmlFile(this PipelineNode parentNode, Uri logDirectory, string logName, LogSinkSettings settings) {
+            var logger = new XmlFileLogger(logDirectory, logName);
+            parentNode.WriteTo(logger);
+            return logger;
         }
     }
 }

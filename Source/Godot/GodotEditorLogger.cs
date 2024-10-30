@@ -4,9 +4,13 @@ using Godot;
 
 namespace Savage.Logs;
 
-/// <summary> Output target for Godot's editor console. (using GD.Print) </summary>
+/// <summary>
+/// Output target for Godot's editor console. (using GD.Print) <br/>
+/// WARNING: until <a href="https://github.com/godotengine/godot/issues/73515">Godot issue 73515</a> is closed, unhandled exceptions in Godot 4 disappear into the ether and there is not way to listen for them! <br/>
+/// - Godot 3 does not have this issue.
+/// </summary>
 /// <remarks> No theming support at this time. Godot's output window does not support BBCode at this time unfortunately. </remarks>
-public class GodotEditorLogger : ILogSink {
+public class GodotEditorLogger : PipelineNode, ILogSink {
 
     // parameters
     public LogSinkSettings Settings { get; }
@@ -51,7 +55,7 @@ public class GodotEditorLogger : ILogSink {
 
     private void InsertEntryInto(StringBuilder writer, LogEntry entry) {
 
-        foreach (var decoration in entry.Decorations.InlinePreceding)
+        foreach (var decoration in entry.Attachments.InlinePreceding)
             WriteInlineDecorationNoColor(writer, decoration);
 
         //if (Settings.DisplayVerbosity)
@@ -59,14 +63,14 @@ public class GodotEditorLogger : ILogSink {
 
         writer.Append(entry.Message);
 
-        foreach (var decoration in entry.Decorations.InlineTrailing)
+        foreach (var decoration in entry.Attachments.InlineTrailing)
             WriteInlineDecorationNoColor(writer, decoration);
 
-        foreach (var decoration in entry.Decorations.FollowingLine)
+        foreach (var decoration in entry.Attachments.FollowingLine)
             WriteFollowingLineNoColor(writer, decoration);
     }
 
-    private void WriteInlineDecorationNoColor(StringBuilder writer, LogDecoration decoration) {
+    private void WriteInlineDecorationNoColor(StringBuilder writer, MessageAttachment decoration) {
         if (decoration.ShowTag) {
             writer.Append($"{decoration.Tag}: ");
         }
@@ -74,7 +78,7 @@ public class GodotEditorLogger : ILogSink {
         writer.Append($"{decoration.Value} ");
     }
 
-    private void WriteFollowingLineNoColor(StringBuilder writer, LogDecoration decoration) {
+    private void WriteFollowingLineNoColor(StringBuilder writer, MessageAttachment decoration) {
 
         writer.Append($"\n    - {decoration.Tag}: ");
 
@@ -97,7 +101,7 @@ public static partial class LogPipelineExtensions {
     /// <inheritdoc cref="GodotEditorLogger"/>
     public static LogPipeline SinkGodotEditorIfEditorBuild(this LogPipeline pipeline) {
         if (OS.HasFeature("editor"))
-            pipeline.Add(new GodotEditorLogger());
+            pipeline.WriteTo(new GodotEditorLogger());
 
         return pipeline;
     }

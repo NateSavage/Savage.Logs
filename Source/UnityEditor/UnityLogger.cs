@@ -2,10 +2,11 @@
 using System.Text;
 
 using UnityEditor;
+using UnityEngine;
 
 namespace Savage.Logs {
     /// <summary> Output target for Unity's log.txt file, and also the editor console if running from the editor. </summary>
-    public class UnityLogger : ILogger {
+    public class UnityLogger : ILogSink {
 
         #region Constants
         private static readonly string lightThemeTypeColor = "<color=#008060>";
@@ -46,7 +47,7 @@ namespace Savage.Logs {
         #endregion Constants
 
         #region Parameters
-        public LoggerSettings Settings => throw new System.NotImplementedException();
+       // public LoggerSettings Settings => throw new System.NotImplementedException();
 
         private int fontSize;
         private bool includeWriteTime;
@@ -63,8 +64,10 @@ namespace Savage.Logs {
             this.includeCaller = includeCaller;
             this.includeVerbosity = includeVerbosity;
 
-            LogPipeline.MessageLogged += Write;
+            //LogPipeline.MessageLogged += Write;
         }
+
+        public LogSinkSettings Settings { get; }
 
         public void Write(LogEntry entry) {
             // set the unity message icon on the far left to as large as is allowable, and then set the user's font size
@@ -119,7 +122,7 @@ namespace Savage.Logs {
     public static partial class LoggerExtensions {
         /// <inheritdoc cref="UnityLogger"/>
         public static LogPipeline WithUnityLogging(this LogPipeline logger, int fontSize = 14, bool includeWriteTime = false, bool includeCaller = true, bool includeVerbosity = false) {
-            LogPipeline.Register(new UnityLogger(fontSize, includeWriteTime, includeCaller, includeVerbosity));
+          //  LogPipeline.Register(new UnityLogger(fontSize, includeWriteTime, includeCaller, includeVerbosity));
             return logger;
         }
     }

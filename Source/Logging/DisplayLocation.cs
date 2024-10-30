@@ -1,7 +1,7 @@
 ﻿
 namespace Savage.Logs {
 
-    /// <summary> Where a <see cref="LogDecoration"/> should be displayed relative to a <see cref="LogEntry"/> object's <see cref="LogEntry.Message"/>. </summary>
+    /// <summary> Where a <see cref="MessageAttachment"/> should be displayed relative to a <see cref="LogEntry"/> object's <see cref="LogEntry.Message"/>. </summary>
     public enum DisplayLocation {
         /// <summary> Decoration intended to be displayed on the same line as and before the message text. </summary>
         InlinePreceding,

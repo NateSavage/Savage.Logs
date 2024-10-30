@@ -5,7 +5,7 @@ using System.Text;
 namespace Savage.Logs.LogDecorations {
 
     /// <summary> Log decoration for including the time each log was recorded as a <see cref="DateTime"/>. </summary>
-    public class WriteTimeDecoration : LogDecoration {
+    public class WriteTimeAttachment : MessageAttachment {
         public override string Tag => tag;
         const string tag = "Write Time";
 
@@ -22,7 +22,7 @@ namespace Savage.Logs.LogDecorations {
 
         public override int DisplayPriority => -10_000;
 
-        public WriteTimeDecoration(string writeTime) {
+        public WriteTimeAttachment(string writeTime) {
             Value = $"[{writeTime}]";
         }
 

@@ -19,27 +19,64 @@ namespace Savage.Logs {
         /// <inheritdoc cref="Verbosity"/>
         public Verbosity Verbosity { get; private set; }
 
-        public DecorationContainer Decorations { get; private set; }
+        public AttachmentContainer Attachments { get; private set; }
 
 
         #region Construction
         public LogEntry(string message, Verbosity verbosity) {
             Message = message;
             Verbosity = verbosity;
-            Decorations = new DecorationContainer();
+            Attachments = new AttachmentContainer();
         }
 
-        public LogEntry(string message, Verbosity verbosity, IEnumerable<LogDecoration> decorations) {
+        public LogEntry(string message, Verbosity verbosity, IEnumerable<MessageAttachment> decorations) {
             Message = message;
             Verbosity = verbosity;
             if (decorations is null)
-                Decorations = new DecorationContainer();
+                Attachments = new AttachmentContainer();
             else
-                Decorations = new DecorationContainer(decorations);
+                Attachments = new AttachmentContainer(decorations);
         }
 
 
         #endregion Construction
+
+        public override string ToString() {
+            var entry = new StringBuilder();
+
+            foreach (var attachment in Attachments.InlinePreceding) {
+                if (attachment.ShowTag) {
+                    entry.Append(attachment.Tag);
+                    entry.Append(": ");
+                }
+
+                entry.Append(attachment.Value);
+            }
+
+            entry.Append(Message);
+
+            foreach (var attachment in Attachments.InlineTrailing) {
+                entry.Append(' ');
+                if (attachment.ShowTag) {
+                    entry.Append(attachment.Tag);
+                    entry.Append(": ");
+                }
+                
+                entry.Append(attachment.Value);
+            }
+
+            foreach (var attachment in Attachments.FollowingLine) {
+                entry.Append('\n');
+                if (attachment.ShowTag) {
+                    entry.Append(attachment.Tag);
+                    entry.Append(": ");
+                }
+                
+                entry.Append(attachment.Value);
+            }
+            
+            return entry.ToString();
+        }
 
 
         #region XML Serialization
@@ -54,24 +91,24 @@ namespace Savage.Logs {
             string contents;
             string tag;
 
-            foreach (var decoration in Decorations.InlinePreceding) {
-                contents = new string(decoration.Value.SkipWhile(CharacterIsIllegal).ToArray());
-                tag = decoration.Tag.WithoutWhiteSpace();
+            foreach (var attachment in Attachments.InlinePreceding) {
+                contents = new string(attachment.Value.SkipWhile(CharacterIsIllegalForXml).ToArray());
+                tag = attachment.Tag.WithoutWhiteSpace();
                 writer.WriteAttributeString(tag, contents);
             }
 
-            contents = new string(Message.SkipWhile(CharacterIsIllegal).ToArray());
+            contents = new string(Message.SkipWhile(CharacterIsIllegalForXml).ToArray());
             writer.WriteAttributeString(nameof(Message), contents);
 
-            foreach (var decoration in Decorations.InlineTrailing) {
-                contents = new string(decoration.Value.SkipWhile(CharacterIsIllegal).ToArray());
-                tag = decoration.Tag.WithoutWhiteSpace();
+            foreach (var attachment in Attachments.InlineTrailing) {
+                contents = new string(attachment.Value.SkipWhile(CharacterIsIllegalForXml).ToArray());
+                tag = attachment.Tag.WithoutWhiteSpace();
                 writer.WriteAttributeString(tag, contents);
             }
 
-            foreach (var decoration in Decorations.FollowingLine) {
-                contents = new string(decoration.Value.SkipWhile(CharacterIsIllegal).ToArray());
-                tag = decoration.Tag.WithoutWhiteSpace();
+            foreach (var attachment in Attachments.FollowingLine) {
+                contents = new string(attachment.Value.SkipWhile(CharacterIsIllegalForXml).ToArray());
+                tag = attachment.Tag.WithoutWhiteSpace();
                 writer.WriteStartElement(tag);
                 writer.WriteValue(contents);
                 writer.WriteEndElement();
@@ -80,7 +117,7 @@ namespace Savage.Logs {
             writer.WriteEndElement();
         }
 
-        private bool CharacterIsIllegal(char c) {
+        bool CharacterIsIllegalForXml(char c) {
             return c == 0x20 || c == '<' || c == '>' || c == '+' || c == '\'';
         }
         #endregion

@@ -6,18 +6,18 @@ using System.Text;
 
 namespace Savage.Logs;
 
-public class NetIdDecorationDecorationGenerator : DecorationGenerator<ClientServerDecoration> {
+public class NetIdAttachmentAttachmentGenerator : AttachmentGenerator<ClientServerDecoration> {
 
     public override ThreadRequirement ThreadRequirement => ThreadRequirement.Main;
 
 
     private ENetMultiplayerPeer multiplayerPeer;
 
-    public NetIdDecorationDecorationGenerator(ENetMultiplayerPeer multiplayerPeer) {
+    public NetIdAttachmentAttachmentGenerator(ENetMultiplayerPeer multiplayerPeer) {
         this.multiplayerPeer = multiplayerPeer;
     }
 
-    public override LogDecoration Emit(ref LogEntry logEntry) {
+    public override MessageAttachment CreateAttachmentFor(ref LogEntry logEntry) {
         return new NetIdDecoration(multiplayerPeer.GetUniqueId());
     }
 

@@ -10,37 +10,42 @@ namespace Savage.Logs {
     /// Displays logs through the system's console through stderr. <br/>
     /// Thread safe and significantly lower latency than calling <see cref="System.Console.WriteLine()"/>.
     /// </summary>
-    public class ConsoleLogger : ILogSink {
-
-        // parameters
+#if NET6_0_OR_GREATER
+    [StackTraceHidden]
+#endif
+    public class ConsoleLogger : PipelineNode, ILogSink {
+        
         public LogSinkSettings Settings { get; set; }
 
         public Theme Theme { 
-            get => theme;
+            get => _theme;
             set {
-                LoadColorsFrom(Theme);
-                theme = value;
+                LoadColorsFrom(value);
+                _theme = value;
             } 
         }
-        private Theme theme;
+        Theme _theme;
 
-        private TextWriter errorStream = Console.Error;
+        readonly TextWriter _errorStream = Console.Error;
 
+        ConsoleColor _monochromeColor;
+        
         /// <summary> Color for all text that doesn't fall into the other catagories. </summary>
-        private ConsoleColor TextColor;
+        ConsoleColor _textColor;
 
         /// <summary> Color for text that represents a type. </summary>
-        private ConsoleColor TypeColor;
+        ConsoleColor TypeColor;
 
-        private ConsoleColor TraceColor;
-        private ConsoleColor DebugColor;
-        private ConsoleColor InfoColor;
-        private ConsoleColor WarningColor;
-        private ConsoleColor ErrorColor;
-        private ConsoleColor FatalColor;
+        ConsoleColor _auditColor;
+        ConsoleColor _traceColor;
+        ConsoleColor _debugColor;
+        ConsoleColor _infoColor;
+        ConsoleColor _warningColor;
+        ConsoleColor _errorColor;
+        ConsoleColor _fatalColor;
 
         // state
-        private DoubleBuffer<LogEntry> buffer = new DoubleBuffer<LogEntry>(64);
+        private DoubleBuffer<LogEntry> buffer = new DoubleBuffer<LogEntry>();
         private ConsoleColor previousConsoleColor;
 
         /// <summary> Task for moving data from the buffer and into the system console. </summary>
@@ -48,23 +53,27 @@ namespace Savage.Logs {
 
         #region Construction & Destruction
 
-        public ConsoleLogger(LogSinkSettings settings, Theme theme) {
-            Settings = settings;
-            Theme = theme;
-           
-            //LogPipeline.MessageLogged += Write;
+        public ConsoleLogger(LogSinkSettings settings = null, Theme? theme = null) {
+            Settings = settings ?? new LogSinkSettings();
+            Theme = theme ?? Theme.DefaultConsole();
         }
 
-        private void LoadColorsFrom(Theme colors) {
-            TextColor    = colors.TextColor.ToConsoleColor();
-            TypeColor    = colors.TypeColor.ToConsoleColor();
+        void LoadColorsFrom(Theme colors) {
+            if (colors.Monochrome) {
+                _monochromeColor = colors.MonochromeColor.ToConsoleColor();
+                return;
+            }
+            
+            _textColor    = colors.TextColor.ToConsoleColor();
+            TypeColor     = colors.TypeColor.ToConsoleColor();
 
-            TraceColor   = colors.TraceColor.ToConsoleColor();
-            DebugColor   = colors.DebugColor.ToConsoleColor();
-            InfoColor    = colors.InfoColor.ToConsoleColor();
-            WarningColor = colors.WarningColor.ToConsoleColor();
-            ErrorColor   = colors.ErrorColor.ToConsoleColor();
-            FatalColor   = colors.FatalColor.ToConsoleColor();
+            _auditColor   =  colors.AuditColor.ToConsoleColor();
+            _traceColor   = colors.TraceColor.ToConsoleColor();
+            _debugColor   = colors.DebugColor.ToConsoleColor();
+            _infoColor    = colors.InfoColor.ToConsoleColor();
+            _warningColor = colors.WarningColor.ToConsoleColor();
+            _errorColor   = colors.ErrorColor.ToConsoleColor();
+            _fatalColor   = colors.FatalColor.ToConsoleColor();
         }
 
         #endregion Construction & Destruction
@@ -83,12 +92,11 @@ namespace Savage.Logs {
 
         #region Private Utility Methods
 
-        private static void DoNothing() { }
+        static void DoNothing() { }
 
-        private void WriteFromBuffers() {
-            do {
-                if (buffer.Front.Count > 0)
-                    buffer.Swap();
+        void WriteFromBuffers() {
+            do { 
+                buffer.Swap();
 
                 /*
                 // attach decorations the console is supposed to provide
@@ -114,113 +122,126 @@ namespace Savage.Logs {
         }
 
         private void WriteEntryToConsoleMonochrome(LogEntry entry) {
-
-            foreach (var decoration in entry.Decorations.InlinePreceding)
+            previousConsoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = _monochromeColor;
+            
+            foreach (var decoration in entry.Attachments.InlinePreceding)
                 WriteInlineDecorationMonochrome(decoration);
 
             if (Settings.DisplayVerbosity)
-                errorStream.Write($"{entry.Verbosity}: ");
-            errorStream.Write(entry.Message);
+                _errorStream.Write($"{entry.Verbosity}: ");
+            _errorStream.Write(entry.Message);
 
 
-            foreach (var decoration in entry.Decorations.InlineTrailing)
+            foreach (var decoration in entry.Attachments.InlineTrailing)
                 WriteInlineDecorationMonochrome(decoration);
 
-            foreach (var decoration in entry.Decorations.FollowingLine)
+            foreach (var decoration in entry.Attachments.FollowingLine)
                 WriteFollowingLineMonochrome(decoration);
 
-            errorStream.Write('\n');
+            _errorStream.Write('\n');
+            Console.ForegroundColor = previousConsoleColor;
         }
 
         private void WriteEntryToConsole(LogEntry entry) {
             previousConsoleColor = Console.ForegroundColor;
 
 
-            foreach (var decoration in entry.Decorations.InlinePreceding)
+            foreach (var decoration in entry.Attachments.InlinePreceding)
                 WriteInlineDecoration(decoration);
 
             Console.ForegroundColor = ColorFor(entry.Verbosity);
             if (Settings.DisplayVerbosity)
-                errorStream.Write($"{entry.Verbosity}: ");
+                _errorStream.Write($"{entry.Verbosity}: ");
 
-            errorStream.Write(entry.Message);
+            _errorStream.Write(entry.Message);
 
 
-            foreach (var decoration in entry.Decorations.InlineTrailing)
+            foreach (var decoration in entry.Attachments.InlineTrailing)
                 WriteInlineDecoration(decoration);
 
-            foreach (var decoration in entry.Decorations.FollowingLine)
+            foreach (var decoration in entry.Attachments.FollowingLine)
                 WriteFollowingLine(decoration);
 
 
-            errorStream.Write('\n');
+            _errorStream.Write('\n');
             Console.ForegroundColor = previousConsoleColor;
         }
 
-        private void WriteInlineDecorationMonochrome(LogDecoration decoration) {
-            if (decoration.ShowTag)
-                errorStream.Write($"{decoration.Tag} ");
+        private void WriteInlineDecorationMonochrome(MessageAttachment attachment) {
+            if (attachment.ShowTag)
+                _errorStream.Write($"{attachment.Tag} ");
 
-            errorStream.Write($"{decoration.Value} ");
+            _errorStream.Write($"{attachment.Value}: ");
         }
 
-        private void WriteInlineDecoration(LogDecoration decoration) {
-            if (decoration.ShowTag) {
-                Console.ForegroundColor = decoration.TagColor(ref theme).ToConsoleColor();
-                errorStream.Write($"{decoration.Tag} ");
+        private void WriteInlineDecoration(MessageAttachment attachment) {
+            if (attachment.ShowTag) {
+                Console.ForegroundColor = attachment.TagColor(ref _theme).ToConsoleColor();
+                _errorStream.Write($"{attachment.Tag} ");
             }
 
-            Console.ForegroundColor = decoration.ContentColor(ref theme).ToConsoleColor();
-            errorStream.Write($"{decoration.Value}: ");
+            Console.ForegroundColor = attachment.ContentColor(ref _theme).ToConsoleColor();
+            _errorStream.Write($"{attachment.Value}: ");
         }
 
-        private void WriteFollowingLine(LogDecoration decoration) {
+        private void WriteFollowingLine(MessageAttachment attachment) {
 
-            Console.ForegroundColor = decoration.TagColor(ref theme).ToConsoleColor();
-            errorStream.Write($"\n    - {decoration.Tag}: ");
-            Console.ForegroundColor = decoration.ContentColor(ref theme).ToConsoleColor();
+            Console.ForegroundColor = attachment.TagColor(ref _theme).ToConsoleColor();
+            _errorStream.Write($"\n    - {attachment.Tag}: ");
+            Console.ForegroundColor = attachment.ContentColor(ref _theme).ToConsoleColor();
 
-            int indentation = decoration.Tag.Length + 8;
+            int indentation = attachment.Tag.Length + 8;
 
-            string[] lines = decoration.Value.Split('\n');
-            errorStream.WriteLine(lines[0]);
+            string[] lines = attachment.Value.Split('\n');
+            _errorStream.WriteLine(lines[0]);
             for (int i = 1; i < lines.Length; ++i) {
                 for (int x = 0; x < indentation; ++x)
-                    errorStream.Write(' ');
-                errorStream.WriteLine(lines[i]);
+                    _errorStream.Write(' ');
+                _errorStream.WriteLine(lines[i]);
             }
         }
 
-        private void WriteFollowingLineMonochrome(LogDecoration decoration) => errorStream.Write($"\n    - {decoration.Tag}: {decoration.Value}");
+        void WriteFollowingLineMonochrome(MessageAttachment attachment) => _errorStream.Write($"\n    - {attachment.Tag}: {attachment.Value}");
 
-        private ConsoleColor ColorFor(Verbosity verbosity) {
+        ConsoleColor ColorFor(Verbosity verbosity) {
             switch (verbosity) {
-                case Verbosity.Trace: return TraceColor;
-                case Verbosity.Debug: return DebugColor;
-                case Verbosity.Info: return InfoColor;
-                case Verbosity.Warning: return WarningColor;
-                case Verbosity.Error: return ErrorColor;
-                case Verbosity.Fatal: return FatalColor;
+                case Verbosity.Trace:   return _traceColor;
+                case Verbosity.Debug:   return _debugColor;
+                case Verbosity.Info:    return _infoColor;
+                case Verbosity.Warning: return _warningColor;
+                case Verbosity.Error:   return _errorColor;
+                case Verbosity.Fatal:   return _fatalColor;
+                case Verbosity.Audit:   return _auditColor;
                 default:
                     throw new NotImplementedException($"Logging verbosity {verbosity} is not known by the {nameof(ConsoleLogger)}!");
             };
         }
 
-        private void OnMonochromeModeChanged((bool MonochromeMode, LoggingColor MonochromeColor) data) {
+        void OnMonochromeModeChanged((bool MonochromeMode, LoggingColor MonochromeColor) data) {
 
         }
 
         #endregion Private Utility Methods
 
         public override bool Equals(object obj) => obj is ConsoleLogger;
+
+        protected bool Equals(ConsoleLogger other) {
+            return Equals(Settings, other.Settings);
+        }
+
+        public override int GetHashCode() {
+            return (Settings != null ? Settings.GetHashCode() : 0);
+        }
     }
 
-    public static partial class LogPipelineExtensions {
+    public static partial class PipelineNodeExtensions {
 
         /// <inheritdoc cref="ConsoleLogger"/>
-        public static LogPipeline SinkSystemConsole(this LogPipeline pipeline, LogSinkSettings settings = null, Theme? theme = null) {
-            pipeline.Add(new ConsoleLogger(settings, theme is null ? pipeline.Theme : theme.Value));
-            return pipeline;
+        public static PipelineNode WriteToSystemConsole(this PipelineNode parentNode, LogSinkSettings settings = null, Theme? theme = null) {
+            var logger = new ConsoleLogger(settings, theme);
+            parentNode.WriteTo(logger);
+            return logger;
         }
     }
 }

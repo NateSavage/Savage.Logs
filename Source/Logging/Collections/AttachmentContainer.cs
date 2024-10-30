@@ -5,36 +5,36 @@ using System.Runtime.CompilerServices;
 namespace Savage.Logs.Collections {
 
     /// <summary> Decorations are organized into categories for efficient retrieval by <see cref="ILogSink"/>s. </summary>
-    public class DecorationContainer {
+    public class AttachmentContainer {
 
         /// <summary> When true there are no decorations inside this container. </summary>
        // public bool Empty { get; private set; }
 
         /// <inheritdoc cref="DisplayLocation.InlinePreceding"/>
-        public SortedSet<LogDecoration> InlinePreceding { get; private set; } = new SortedSet<LogDecoration>();
+        public SortedSet<MessageAttachment> InlinePreceding { get; private set; } = new SortedSet<MessageAttachment>();
 
         /// <inheritdoc cref="DisplayLocation.InlineTrailing"/>
-        public SortedSet<LogDecoration> InlineTrailing { get; private set; } = new SortedSet<LogDecoration>();
+        public SortedSet<MessageAttachment> InlineTrailing { get; private set; } = new SortedSet<MessageAttachment>();
 
         /// <inheritdoc cref="DisplayLocation.FollowingLine"/>
-        public SortedSet<LogDecoration> FollowingLine { get; private set; } = new SortedSet<LogDecoration>();
+        public SortedSet<MessageAttachment> FollowingLine { get; private set; } = new SortedSet<MessageAttachment>();
 
         #region Constructors
         /// <summary>
         /// This constructor should only be used for creating a container that will never hold anything. <br/>
         /// C# 7.3 doesn't support default constructors on structs which is incredibly annoying.
         /// </summary>
-        public DecorationContainer() {
+        public AttachmentContainer() {
         }
 
-        public DecorationContainer(IEnumerable<LogDecoration> decorations) {
+        public AttachmentContainer(IEnumerable<MessageAttachment> decorations) {
             foreach (var decoration in decorations)
                 Add(decoration);
         }
         #endregion Constructors
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Add(LogDecoration decoration) {
+        public void Add(MessageAttachment decoration) {
             switch (decoration.Location) {
                 case DisplayLocation.InlinePreceding: InlinePreceding.Add(decoration); return;
                 case DisplayLocation.InlineTrailing: InlineTrailing.Add(decoration); return;

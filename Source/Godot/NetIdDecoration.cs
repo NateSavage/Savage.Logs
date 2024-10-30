@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace Savage.Logs;
 
-public class NetIdDecoration : LogDecoration {
+public class NetIdDecoration : MessageAttachment {
     public override string Tag => "NetId";
     public override bool ShowTag => true;
 

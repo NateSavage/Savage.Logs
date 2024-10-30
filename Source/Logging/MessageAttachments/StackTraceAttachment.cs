@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Savage.Logs {
 
-    public sealed class StackTraceDecoration : LogDecoration {
+    public sealed class StackTraceAttachment : MessageAttachment {
 
         public override string Tag => tag;
         const string tag = "Stack Trace";
@@ -24,7 +24,7 @@ namespace Savage.Logs {
 
         public override Type Type => typeof(StackFrame);
 
-        public StackTraceDecoration(Exception exception = null, int skipFrames = 0) {
+        public StackTraceAttachment(Exception exception = null, int skipFrames = 0) {
 
             var builder = new StringBuilder();
             StackTrace trace;
@@ -67,9 +67,16 @@ namespace Savage.Logs {
 
     }
 
-    public static partial class LogPipelineExtensions {
-        public static void AttachStackTraces(this LogPipeline pipeline, Predicate<LogEntry> filter) {
-
+    public static partial class PipelineNodeExtensions {
+        
+        public static PipelineNode AttachStackTrace(this PipelineNode parentNode) {
+            // parentNode.Attach(new WriteTimeAttachmentGenerator(dateTimeFormat, displayLocation));
+            return parentNode;
+        }
+        
+        public static PipelineNode AttachStackTraceWhen(this PipelineNode parentNode,  Predicate<LogEntry> predicate) {
+            //parentNode.AttachWhen(predicate, new WriteTimeAttachmentGenerator(dateTimeFormat, displayLocation));
+            return parentNode;
         }
     }
 }

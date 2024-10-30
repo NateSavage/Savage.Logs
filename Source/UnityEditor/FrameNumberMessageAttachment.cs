@@ -7,25 +7,28 @@ using Savage.Logs;
 namespace Savage.Logs.UnityEditor {
 
     /// <summary> </summary>
-    internal class FrameNumberLogDecoration : LogDecoration {
+    internal class FrameNumberMessageAttachment : MessageAttachment {
 
         public override string Tag => tag;
         private const string tag = "Frame Number";
+        
+        public override string Value { get; }
 
-        public override bool DisplayTag => true;
+        public  bool DisplayTag => true;
 
-        public override string Contents => contents;
+        public  string Contents => contents;
         private readonly string contents;
 
         public override ThreadRequirement ThreadRequirement => ThreadRequirement.Main;
 
         public override DisplayLocation Location => DisplayLocation.InlinePreceding;
 
+
         public override Type Type => typeof(int);
 
         public override int DisplayPriority => 0;
 
-        public FrameNumberLogDecoration() {
+        public FrameNumberMessageAttachment() {
             contents = UnityEngine.Time.frameCount.ToString();
         }
 

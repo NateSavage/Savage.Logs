@@ -13,6 +13,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Savage.Logs.UnityBuild", "S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Savage.Logs.UnityEditor", "Source\UnityEditor\Savage.Logs.UnityEditor.csproj", "{83D21B63-F88B-494D-BCE8-E85C21EAE919}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Savage.Logs.Tests", "Savage.Logs.Tests\Savage.Logs.Tests.csproj", "{144811E6-3D2A-47AA-82AB-290A4614F77C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Savage.Logs.ThemeTester", "Savage.Logs.ThemeTester\Savage.Logs.ThemeTester.csproj", "{6F07EB77-948D-45A0-B4E6-F7FB221519C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{83D21B63-F88B-494D-BCE8-E85C21EAE919}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83D21B63-F88B-494D-BCE8-E85C21EAE919}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83D21B63-F88B-494D-BCE8-E85C21EAE919}.Release|Any CPU.Build.0 = Release|Any CPU
+		{144811E6-3D2A-47AA-82AB-290A4614F77C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{144811E6-3D2A-47AA-82AB-290A4614F77C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{144811E6-3D2A-47AA-82AB-290A4614F77C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{144811E6-3D2A-47AA-82AB-290A4614F77C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F07EB77-948D-45A0-B4E6-F7FB221519C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F07EB77-948D-45A0-B4E6-F7FB221519C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F07EB77-948D-45A0-B4E6-F7FB221519C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F07EB77-948D-45A0-B4E6-F7FB221519C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

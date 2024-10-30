@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    
+  </ItemGroup>
+
+  <!-- Project Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="TUnit" Version="0.2.112" />
+    <Using Include="TUnit"/>
+    <Using Include="TUnit.Assertions"/>
+    <Using Include="TUnit.Assertions.Extensions"/>
+    <Using Include="System.Threading.Tasks"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Source\Godot\Savage.Logs.Godot.csproj" />
+    <ProjectReference Include="..\Source\Logging\Savage.Logs.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -5,7 +5,7 @@ namespace Savage.Logs {
 
     // TODO: fix this class
     /// <summary> Output target for Unity's log.txt file, and also the editor console if running from the editor. </summary>
-    public class UnityLogger : ILogger {
+    public class UnityLogger : ILogSink {
 
         // parameters
         public LoggerSettings Settings => throw new System.NotImplementedException();

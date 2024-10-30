@@ -18,7 +18,7 @@ public class Program {
     static void Main(string[] args) {
 
         var pipelineSettings = LogPipelineSettings.Default();
-        savageLogger = new LogPipeline(pipelineSettings, Theme.DefaultConsoleTheme());
+        savageLogger = new LogPipeline(pipelineSettings, Theme.DefaultConsole());
 
 
         Serilog.Log.Logger = new LoggerConfiguration()

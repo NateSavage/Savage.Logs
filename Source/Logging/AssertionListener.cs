@@ -50,9 +50,9 @@ namespace Savage.Logs {
         /// <remarks> Called by <see cref="Debug.WriteLine(object, string)"/> and <see cref="Trace.WriteLine(object, string)"/>. </remarks>
         public override void WriteLine(object instance, string category) {
             if (recordCallerInformation)
-                Log.Message(writeVerbosity, instance.ToString(), new[] { new LogDecoration<string>("Trace Event Category", category, DisplayLocation.FollowingLine) }, GetCaller());
+                Log.Message(writeVerbosity, instance.ToString(), new[] { new MessageAttachment<string>("Trace Event Category", category, DisplayLocation.FollowingLine) }, GetCaller());
             else
-                Log.Message(writeVerbosity, instance.ToString(), new[] { new LogDecoration<string>("Trace Event Category", category, DisplayLocation.FollowingLine) });
+                Log.Message(writeVerbosity, instance.ToString(), new[] { new MessageAttachment<string>("Trace Event Category", category, DisplayLocation.FollowingLine) });
         }
 
         /// <remarks> Called by <see cref="Debug.Write(object, string)"/> and <see cref="Trace.Write(object, string)"/>. </remarks>
@@ -63,9 +63,9 @@ namespace Savage.Logs {
         /// <remarks> Called by <see cref="Debug.WriteLine(string, string)"/> and <see cref="Trace.WriteLine(string, string)"/>. </remarks>
         public override void WriteLine(string message, string category) {
             if (recordCallerInformation)
-                Log.Message(writeVerbosity, message, new[] { new LogDecoration<string>("Trace Event Category", category, DisplayLocation.FollowingLine) }, callerPath: GetCaller());
+                Log.Message(writeVerbosity, message, new[] { new MessageAttachment<string>("Trace Event Category", category, DisplayLocation.FollowingLine) }, callerPath: GetCaller());
             else
-                Log.Message(writeVerbosity, message, new[] { new LogDecoration<string>("Trace Event Category", category, DisplayLocation.FollowingLine) });
+                Log.Message(writeVerbosity, message, new[] { new MessageAttachment<string>("Trace Event Category", category, DisplayLocation.FollowingLine) });
         }
 
         /// <remarks> Called by <see cref="Debug.Write(string, string)"/> and <see cref="Trace.Write(string, string)"/>. </remarks>
@@ -76,15 +76,15 @@ namespace Savage.Logs {
         // we always want to attach a stack trace when an assertion fails I think
         /// <remarks> Called when <see cref="Debug.Assert(bool, string)"/> and <see cref="Trace.Assert(bool, string)"/> evaluates to false, or fail method is called directly on either type. </remarks>
         public override void Fail(string message) {
-            Log.Message(failVerbosity, message, new[] { new StackTraceDecoration(skipFrames: 1) });
+            Log.Message(failVerbosity, message, new[] { new StackTraceAttachment(skipFrames: 1) });
         }
 
         // we always want to attach a stack trace when an assertion fails I think
         /// <remarks> Called when <see cref="Debug.Assert(bool, string, string)"/> and <see cref="Trace.Assert(bool, string, string)"/> evaluates to false, or fail method is called directly on either type. </remarks>
         public override void Fail(string message, string detailMessage) {
-            Log.Message(failVerbosity, message, new LogDecoration[] {
-                new LogDecoration<string>("Detail Message", detailMessage, displayLocation: DisplayLocation.FollowingLine),
-                new StackTraceDecoration(skipFrames: 1)
+            Log.Message(failVerbosity, message, new MessageAttachment[] {
+                new MessageAttachment<string>("Detail Message", detailMessage, displayLocation: DisplayLocation.FollowingLine),
+                new StackTraceAttachment(skipFrames: 1)
                 });
         }
 

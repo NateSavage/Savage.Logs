@@ -9,7 +9,7 @@ namespace Savage.Logs {
     /// Not as memory efficient as declaring your own log decoration type that can statically define some of it's fields to share across instances. <br/>
     /// Intended for when you need to attach additional data to a log quickly in one off situations
     /// </remarks>
-    public sealed class LogDecoration<T> : LogDecoration {
+    public sealed class MessageAttachment<T> : MessageAttachment {
 
         public override string Tag { get; }
 
@@ -21,7 +21,7 @@ namespace Savage.Logs {
 
         public override int DisplayPriority { get; }
 
-        public LogDecoration(string value, string tag, DisplayLocation displayLocation, int displayPriority = 0) {
+        public MessageAttachment(string value, string tag, DisplayLocation displayLocation, int displayPriority = 0) {
             Value = value;
             Tag = tag;
             Location = displayLocation;
@@ -34,7 +34,7 @@ namespace Savage.Logs {
     /// these decorations are used to add additional data to each entry, they can be configured to be automatically added to every log, or to logs passing through specific sinks.
     /// </summary>
     /// <remarks> Inherit from this class to log custom data types that you need to attach to log messages regularly. </remarks>
-    public abstract class LogDecoration : IComparable<LogDecoration> {
+    public abstract class MessageAttachment : IComparable<MessageAttachment> {
 
         /// <summary> What this piece of data should be called or serialized under the name of. </summary>
         /// <remarks> Tags cannot contain whitespace. </remarks>
@@ -67,6 +67,6 @@ namespace Savage.Logs {
 
 
         // https://stackoverflow.com/questions/5716423/c-sharp-sortable-collection-which-allows-duplicate-keys
-        public int CompareTo(LogDecoration other) => other.DisplayPriority < DisplayPriority ? 1 : -1;
+        public int CompareTo(MessageAttachment other) => other.DisplayPriority < DisplayPriority ? 1 : -1;
     }
 }

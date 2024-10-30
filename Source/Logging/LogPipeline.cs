@@ -9,211 +9,153 @@ using System.Diagnostics;
 using System.ComponentModel.Design;
 using System.Threading;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Savage.Logs.LogDecorations;
-
-[assembly: InternalsVisibleTo("Savage.Logs.Benchmarks")]
-[assembly: InternalsVisibleTo("Loggy.Tests")]
 
 namespace Savage.Logs {
 
     /// <summary>  A series of transformations that takes in a log entry and attaches data to it before sending it to output sinks. </summary>
     /// <remarks> This class can be called from off the main thread and needs to remain thread safe. </remarks>
-    public class LogPipeline {
-
-        /// <summary>
-        /// Invoked after the <see cref="LogEntry"/> has been passed to every output sink, output sinks *should* have finished attaching all decorations before this is called. <br/>
-        /// sinks *may* not have finished recording the entry, some sinks may take a significant amount of time to write to a file or transfer data over the wire.
-        /// </summary>
-        public event Action<LogEntry> MessageLogged;
+#if NET6_0_OR_GREATER
+    [StackTraceHidden]
+#endif
+    public class LogPipeline : PipelineNode, ILogger {
 
         public LogPipelineSettings Settings;
+        public readonly Theme Theme;
 
-        public Theme Theme;
+        /// <summary> Logs are queued in this buffer, and passed down the pipeline later. </summary>
+        readonly DoubleBuffer<LogEntry> _messageBuffer = new DoubleBuffer<LogEntry>();
+        Task _bufferDaemon = Task.Run(DoNothing);
 
-        private List<DecorationGenerator> decorationGenerators;
-
-        private List<Predicate<LogEntry>> conditionalFilters;
-        private List<Func<LogEntry, LogDecoration>> conditionalGenerators;
-
-        /// <summary> Functions that this sink will use to ignore or include messages. </summary>
-        public List<Predicate<LogEntry>> Filters = new List<Predicate<LogEntry>>();
-
-        private HashSet<ILogSink> outputSinks = new HashSet<ILogSink>();
-        private AssertionListener assertionListener;
-        private bool initialized;
-
-        /// <summary> Logs are stored in a buffer, and passed down the pipeline after </summary>
-        private DoubleBuffer<LogEntry> messageBuffer = new DoubleBuffer<LogEntry>();
-        private int logBufferKey;
-
-        /// <summary> Lock this object whenever making modifications to settings. </summary>
-        private object configurationLock = new object();
-
+        
         #region Construction
+            
+        public LogPipeline(LogPipelineSettings? configuration = null, Theme? theme = null) {
+            Settings = configuration ?? LogPipelineSettings.Default();
+            Theme = theme ?? Theme.DefaultDark();
+            
+            // TODO: add unit test for assertion listener
+            var assertionListener = new AssertionListener(Settings.AssertionVerbosity, Settings.IncludeCallerFileNameForTrace);
+            System.Diagnostics.Trace.Listeners.Add(assertionListener);
+          
+            CallingFileAttachment.InternalLocation = Settings.CallerFileNameDisplayLocation;
 
-        public LogPipeline(LogPipelineSettings configuration, Theme theme) {
-            lock (configurationLock) {
-                if (initialized) { // reset state that configuration should override
-                    decorationGenerators.Clear();
-                    AppDomain.CurrentDomain.UnhandledException -= LogUnhandledException;
-                }
-                else { // first time initialization only
-                    assertionListener = new AssertionListener(configuration.AssertionVerbosity, configuration.IncludeCallerFileNameForTrace);
-                    System.Diagnostics.Trace.Listeners.Add(assertionListener);
-                }
-
-                Settings = configuration;
-                Theme = theme;
-                CallerDecoration.InternalLocation = configuration.callerFileNameDisplayLocation;
-
-                decorationGenerators = new List<DecorationGenerator>();
-                conditionalGenerators = new List<Func<LogEntry, LogDecoration>>();
-                conditionalFilters = new List<Predicate<LogEntry>>();
-
-
-                if (configuration.LogUnhandledExceptions) // this covers all threads, not just the main one
-                    AppDomain.CurrentDomain.UnhandledException += LogUnhandledException;
-
-                initialized = true;
-            }
+            if (Settings.LogUnhandledExceptions) // this covers all threads, not just the main one
+                AppDomain.CurrentDomain.UnhandledException += LogUnhandledException;
+            
+            if (Savage.Logs.Log.GlobalLogPipeline is null)
+                Savage.Logs.Log.GlobalLogPipeline = this;
         }
 
-        public void Reconfigure(LogPipelineSettings configuration, Theme theme) {
-            lock (configurationLock) {
-                decorationGenerators.Clear();
-                AppDomain.CurrentDomain.UnhandledException -= LogUnhandledException;
-
-                Settings = configuration;
-                Theme = theme;
-                CallerDecoration.InternalLocation = configuration.callerFileNameDisplayLocation;
-
-                decorationGenerators = new List<DecorationGenerator>();
-                conditionalGenerators = new List<Func<LogEntry, LogDecoration>>();
-                conditionalFilters = new List<Predicate<LogEntry>>();
-
-                if (configuration.LogUnhandledExceptions) // this covers all threads, not just the main one
-                    AppDomain.CurrentDomain.UnhandledException += LogUnhandledException;
-            }
+        public LogPipeline DropWhenVerbosityIsBelow(Verbosity maxDisplayedVerbosity) {
+            Settings.MinimumVerbosity = maxDisplayedVerbosity;
+            return this;
         }
-
-        /// <summary> Optional replace for new <see cref="LogPipeline"/> for fluent style syntax. </summary>
-        public static LogPipeline Create(LogPipelineSettings configuration, Theme? theme = null) {
-            return new LogPipeline(configuration, theme is null ? Theme.DefaultDarkTheme() : theme.Value);
+        
+        public LogPipeline AttachCallerFileName() {
+            Settings.IncludeCallerFileName = true;
+            return this;
         }
-
+        
+        public static LogPipeline Create(LogPipelineSettings? configuration = null, Theme? theme = null) => new LogPipeline(configuration, theme);
         #endregion Construction
 
         #region Public Logging Methods
-
-        public void Trace(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Trace, message, callerPath, decorations);
-        public void Debug(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Debug, message, callerPath, decorations);
-        public void Info(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Info, message, callerPath, decorations);
-        public void Warning(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Warning, message, callerPath, decorations);
-        public void Error(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Error, message, callerPath, decorations);
-        public void Fatal(string message, LogDecoration[] decorations = null, [CallerFilePath] string callerPath = null) => BroadcastLog(Verbosity.Fatal, message, callerPath, decorations);
-
+            
+            // add method for exceptions?
+        /// <inheritdoc cref="Verbosity.Trace"/>
+        public void LogTrace(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Trace, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Debug"/>
+        public void LogDebug(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Debug, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Info"/>
+        public void LogInfo(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Info, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Warning"/>
+        public void LogWarning(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Warning, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Error"/>
+        public void LogError(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Error, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Fatal"/>
+        public void LogFatal(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Fatal, message, attachments, callerPath);
+        /// <inheritdoc cref="Verbosity.Audit"/>
+        public void LogAudit(string message, MessageAttachment[] attachments = null, [CallerFilePath] string callerPath = null) => QueueForBroadcast(Verbosity.Audit, message, attachments, callerPath);
         #endregion Public Logging Methods
 
-        public LogPipeline DropLogsWith(Predicate<LogEntry> shouldLog) {
-            Filters.Add(shouldLog);
-            return this;
-        }
-
-        public LogPipeline ConditionallyAttach(Predicate<LogEntry> attachmentCondition, Func<LogEntry, LogDecoration> decorationGenerator) {
-            conditionalFilters.Add(attachmentCondition);
-            conditionalGenerators.Add(decorationGenerator);
-            return this;
-        }
-
-        public void Add(DecorationGenerator generator) {
-#if DEBUG
-            if (decorationGenerators.Contains(generator))
-                throw new ArgumentException($"Identical generator already exists for {generator}");
-#endif
-            decorationGenerators.Add(generator);
-        }
-
-        /// <remarks> Registering the same logger multiple times will throw an <see cref="ArgumentException"/>. </remarks>
-        /// <exception cref="ArgumentException"> Identical logger has already been registered. </exception>
-        public void Add(ILogSink logger) {
-#if DEBUG
-            if (outputSinks.Contains(logger))
-                throw new ArgumentException($"Identical logger already exists for {logger}");
-#endif
-            outputSinks.Add(logger);
-        }
-
-        #region Queries
-
-        /// <summary> Returns true if this pipeline has ANY <see cref="DecorationGenerator"/> matching or deriving from the desired type. </summary>
-        public bool HasDecorationGenerator<T>() where T : DecorationGenerator {
-            for (int i = 0; i < decorationGenerators.Count; ++i)
-                if (typeof(T).IsAssignableFrom(decorationGenerators[i].GetType()))
-                    return true;
-
-            return false;
-        }
-
-        /// <summary> Removes ALL <see cref="DecorationGenerator"/>s matching or deriving from the desired type. </summary>
-        /// <typeparam name="T"></typeparam>
-        public void RemoveDecorationGenerator<T>() {
-            List<int> indexesToRemove = new List<int>(2);
-
-            for (int i = 0; i < decorationGenerators.Count; ++i) {
-                if (typeof(T).IsAssignableFrom(decorationGenerators[i].GetType()))
-                    indexesToRemove.Add(i);
-            }
-               
-            for(int i = indexesToRemove.Count + 1; i > 0; --i) {
-                decorationGenerators.RemoveAt(i);
-            }
-        }
-
-        #endregion Queries
-
-        private void LogUnhandledException(object sender, UnhandledExceptionEventArgs arguments) => UnhandledException(sender, (Exception)arguments.ExceptionObject);
+        void LogUnhandledException(object sender, UnhandledExceptionEventArgs arguments) => UnhandledException(sender, (Exception)arguments.ExceptionObject);
 
         /// <summary> Logs an unhandled exception. </summary>
-        private void UnhandledException(object caller, Exception exception) {
+        void UnhandledException(object caller, Exception exception) {
             // do not replace == with is because == can be overridden and is cannot
             string callerPath = caller == null ? "UnknownCaller" : caller.GetType().Name;
-            var decorations = new LogDecoration[] {
-                new ThreadIDDecoration(),
-                new StackTraceDecoration(exception)
+            var decorations = new MessageAttachment[] {
+                new ThreadIdAttachment(),
+                new StackTraceAttachment(exception)
             };
-            BroadcastLog(Verbosity.Fatal, exception.Message, callerPath, decorations);
+            QueueForBroadcast(Verbosity.Fatal, exception.Message, decorations, callerPath);
         }
+        
+        internal void QueueForBroadcast(Verbosity verbosity, string message, MessageAttachment[] decorations, string callerPath) {
+            if (verbosity > Settings.MinimumVerbosity)
+                return;
+            
+            var logEntry = new LogEntry(message, verbosity, decorations);
+            
+            if (ShouldDrop(logEntry))
+                return;
+            
+            if(Settings.IncludeCallerFileName)
+                logEntry.Attachments.Add(new CallingFileAttachment(callerPath));
+            
+            // we need to do the initial round of metadata on the main thread because delaying and batching write time is bad
+            // and recording the thread id from a different thread from the caller is bad
+            AttachMetaDataTo(ref logEntry);
+            
+            _messageBuffer.Front.Add(logEntry);
+            
+            // if the buffer daemon is still running, it will automatically check if there's more data for it to keep churning through
+            // after it finishes it's last job
+            if (_bufferDaemon.IsCompleted)
+                _bufferDaemon = Task.Run(BroadcastLogs);
+        }
+        
+        /// <summary> Pushes queued messages through the pipeline. </summary>
+        void BroadcastLogs() {
+            do {
+                _messageBuffer.Swap();
+                lock(_messageBuffer.Back) {
+                    foreach (PipelineNode child in Children) {
+                        foreach (var message in _messageBuffer.Back) 
+                            child.ProcessAndPushToChildrenRecursive(message);
+                    }
 
-        //TODO: take this method apart and move as much work off the main thread as possible
-        // replace our decoration generators with Dictionary<ThreadRequirement, List<DecorationGenerator>>
-        // MessageLogged should not be invoked until all generators have finished attaching metadata
-
-        // this method should simply record to a double buffer and then actually process logs on another thread
-        // if Godot or Unity can't handle this, we should provide a separate place to store output sinks that require living on the main thread
-        internal void BroadcastLog(Verbosity verbosity, string message, string callerPath, LogDecoration[] decorations = null) {
-            lock (messageBuffer.FrontLock) {
-                var logEntry = new LogEntry(message, verbosity, decorations);
-
-                if (verbosity > Settings.MinimumVerbosity)
-                    return;
-
-                foreach (Predicate<LogEntry> shouldLog in Filters) {
-                    if (shouldLog.Invoke(logEntry) is false)
-                        return;
+                    // if we want to go even faster we could start treating this like a rolling buffer and not bother to erase anything in it
+                    _messageBuffer.Back.Clear();
                 }
-
-                if (Settings.IncludeCallerFileName)
-                    logEntry.Decorations.Add(new CallerDecoration(Path.GetFileNameWithoutExtension(callerPath)));
-
-                for (int i = 0; i < decorationGenerators.Count; ++i)
-                    logEntry.Decorations.Add(decorationGenerators[i].Emit(ref logEntry));
-
-
-                foreach (ILogSink output in outputSinks)
-                    output.Write(logEntry);
-
-                MessageLogged?.Invoke(logEntry);
-            }
+                
+                // if more messages were written to the front buffer while we were working on the back buffer
+                // we can swap the buffers again and keep churning
+            } while (_messageBuffer.Front.Count > 0); 
         }
+        
+        /// <returns> A description of the pipeline in dot graph language.</returns>
+        public string DebugString() {
+            throw new NotImplementedException();
+        }
+
+    #region Microsoft.Extensions.Logging.ILogger Implementation
+
+        public bool IsEnabled(LogLevel logLevel) => Settings.MinimumVerbosity <= logLevel.ToSavageLogsVerbosity();
+        
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+            QueueForBroadcast(logLevel.ToSavageLogsVerbosity(), formatter(state, exception), new MessageAttachment[] { new MicrosoftEventIdAttachment(eventId) }, callerPath: null);
+        }
+        
+        // TState is promised to not be null, we can't use the language feature that tells the compiler that pre dotnet 8
+        public IDisposable BeginScope<TState>(TState state) {
+            throw new NotImplementedException();
+        }
+    #endregion Microsoft.Extensions.Logging.ILogger Implementation
+        
+        static void DoNothing() { }
     }
 }

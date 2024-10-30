@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Savage.Logs.LogDecorations {
 
-    public sealed class VerbosityDecoration : LogDecoration {
+    public sealed class VerbosityAttachment : MessageAttachment {
 
 
         public override int DisplayPriority => -2_000;
@@ -21,7 +21,7 @@ namespace Savage.Logs.LogDecorations {
 
         private Verbosity verbosity;
 
-        public VerbosityDecoration(Verbosity verbosity) {
+        public VerbosityAttachment(Verbosity verbosity) {
             this.verbosity = verbosity;
             Value = verbosity.ToString();
         }

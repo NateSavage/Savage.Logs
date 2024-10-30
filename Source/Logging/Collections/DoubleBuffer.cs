@@ -7,8 +7,6 @@ namespace Savage.Logs {
     /// Double buffers can have their front and back buffer swapped so that write operations can be done on the front buffer while a separate piece of code is reading from the back buffer.
     /// </summary>
     internal class DoubleBuffer<T> {
-
-
         /// <remarks> You should put a lock on <see cref="FrontLock"/> while performing operations on this list if it may be accessed from other threads. </remarks>
         public List<T> Front { get; private set; }
         public readonly object FrontLock = new object();
@@ -18,22 +16,23 @@ namespace Savage.Logs {
         public readonly object BackLock = new object();
 
         // state
-        private List<T> bufferA;
-        private List<T> bufferB;
+        readonly List<T> _bufferA;
+        readonly List<T> _bufferB;
 
         #region Construction
+            
         public DoubleBuffer() {
-            bufferA = new List<T>();
-            bufferB = new List<T>();
-            Front = bufferA;
-            Back = bufferB;
+            _bufferA = new List<T>();
+            _bufferB = new List<T>();
+            Front = _bufferA;
+            Back = _bufferB;
         }
 
         public DoubleBuffer(int startingSize) {
-            bufferA = new List<T>(startingSize);
-            bufferB = new List<T>(startingSize);
-            Front = bufferA;
-            Back = bufferB;
+            _bufferA = new List<T>(startingSize);
+            _bufferB = new List<T>(startingSize);
+            Front = _bufferA;
+            Back = _bufferB;
         }
         #endregion Construction
 
@@ -42,13 +41,13 @@ namespace Savage.Logs {
         public void Swap() {
             lock (FrontLock) {
                 lock (BackLock) {
-                    if (ReferenceEquals(Front, bufferA)) {
-                        Front = bufferB;
-                        Back = bufferA;
+                    if (ReferenceEquals(Front, _bufferA)) {
+                        Front = _bufferB;
+                        Back = _bufferA;
                     }
                     else {
-                        Front = bufferA;
-                        Back = bufferB;
+                        Front = _bufferA;
+                        Back = _bufferB;
                     }
                 }
             }

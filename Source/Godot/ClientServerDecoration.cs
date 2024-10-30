@@ -3,7 +3,7 @@
 namespace Savage.Logs;
 
 /// <summary> Simplified decoration that simply displays "Server" if the network peer is the host or "Client" if they aren't. </summary>
-public class ClientServerDecoration : LogDecoration {
+public class ClientServerDecoration : MessageAttachment {
     public override string Tag => tag;
     public string tag;
     public override bool ShowTag => true;

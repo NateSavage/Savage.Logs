@@ -20,8 +20,8 @@ namespace Savage.Logs {
         //public LoggingColor BackgroundColor;
 
         /// <summary> Color for all text that doesn't fall into the other categories. </summary>
-        public LoggingColor TextColor { get => Monochrome ? MonochromeColor : textColor; set => textColor = value; }
-        private LoggingColor textColor;
+        public LoggingColor TextColor { get => Monochrome ? MonochromeColor : _textColor; set => _textColor = value; }
+        LoggingColor _textColor;
 
         /// <summary> Color for text that represents a type. </summary>
         public LoggingColor TypeColor { get => Monochrome ? MonochromeColor : typeColor; set => typeColor = value; }
@@ -29,33 +29,37 @@ namespace Savage.Logs {
 
         // verbosity colors
         /// <summary> Color for the text of a <see cref="Verbosity.Fatal"/> log. </summary>
-        public LoggingColor FatalColor { get => Monochrome ? MonochromeColor : fatalColor; set => fatalColor = value; }
-        private LoggingColor fatalColor;
+        public LoggingColor FatalColor { get => Monochrome ? MonochromeColor : _fatalColor; set => _fatalColor = value; }
+        LoggingColor _fatalColor;
 
         /// <summary> Color for the message text of a <see cref="Verbosity.Error"/> log. </summary>
-        public LoggingColor ErrorColor { get => Monochrome ? MonochromeColor : errorColor; set => errorColor = value; }
-        private LoggingColor errorColor;
+        public LoggingColor ErrorColor { get => Monochrome ? MonochromeColor : _errorColor; set => _errorColor = value; }
+        LoggingColor _errorColor;
 
         /// <summary> Color for the message text of a <see cref="Verbosity.Warning"/> log. </summary>
-        public LoggingColor WarningColor { get => Monochrome ? MonochromeColor : warningColor; set => warningColor = value; }
-        private LoggingColor warningColor;
+        public LoggingColor WarningColor { get => Monochrome ? MonochromeColor : _warningColor; set => _warningColor = value; }
+        LoggingColor _warningColor;
 
         /// <summary> Color for the message text of a <see cref="Verbosity.Info"/> log. </summary>
-        public LoggingColor InfoColor { get => Monochrome ? MonochromeColor : infoColor; set => infoColor = value; }
-        private LoggingColor infoColor;
+        public LoggingColor InfoColor { get => Monochrome ? MonochromeColor : _infoColor; set => _infoColor = value; }
+        LoggingColor _infoColor;
 
         /// <summary> Color for the message text of a <see cref="Verbosity.Debug"/> log. </summary>
-        public LoggingColor DebugColor { get => Monochrome ? MonochromeColor : debugColor; set => debugColor = value; }
-        private LoggingColor debugColor;
+        public LoggingColor DebugColor { get => Monochrome ? MonochromeColor : _debugColor; set => _debugColor = value; }
+        LoggingColor _debugColor;
 
         /// <summary> Color for the message text of a <see cref="Verbosity.Trace"/> log. </summary>
-        public LoggingColor TraceColor { get => Monochrome ? MonochromeColor : traceColor; set => traceColor = value; }
-        private LoggingColor traceColor;
+        public LoggingColor TraceColor { get => Monochrome ? MonochromeColor : _traceColor; set => _traceColor = value; }
+        LoggingColor _traceColor;
+        
+        /// <summary> Color for the message text of a <see cref="Verbosity.Audit"/> log. </summary>
+        public LoggingColor AuditColor { get => Monochrome ? MonochromeColor : _auditColor; set => _auditColor = value; }
+        LoggingColor _auditColor;
 
         #region Construction
         /// <summary> Creates a new <see cref="Theme"/> struct with the default dark theme. </summary>
         /// <remarks> TODO: color this theme in. </remarks>
-        public static Theme DefaultDarkTheme() {
+        public static Theme DefaultDark() {
             return new Theme {
                 ThemeName    = "DefaultDark",
                 Monochrome = false,
@@ -67,12 +71,13 @@ namespace Savage.Logs {
                 InfoColor    = new LoggingColor(239, 239, 239),    // white
                 DebugColor   = new LoggingColor(128, 128, 128),    // dark gray
                 TraceColor   = new LoggingColor(128, 128, 128),    // dark gray
+                AuditColor   = new LoggingColor(128, 128, 128),    // dark gray
             };
         }
 
         /// <summary> Creates a new <see cref="Theme"/> struct with the default light theme. </summary>
         /// <remarks> TODO: color this theme in. </remarks>
-        public static Theme DefaultLightTheme() {
+        public static Theme DefaultLight() {
             return new Theme {
                 ThemeName    = "DefaultLight",
                 Monochrome = false,
@@ -84,28 +89,30 @@ namespace Savage.Logs {
                 InfoColor    = new LoggingColor(128, 128, 128),    // dark gray
                 DebugColor   = new LoggingColor(128, 128, 128),    // dark gray
                 TraceColor   = new LoggingColor(128, 128, 128),    // dark gray
+                AuditColor   = new LoggingColor(128, 128, 128),    // dark gray
             };
         }
 
         /// <summary> Creates a new <see cref="Theme"/> struct with the terminal colors that map well to <see cref="System.ConsoleColor"/>s. </summary>
-        public static Theme DefaultConsoleTheme() {
+        public static Theme DefaultConsole() {
             return new Theme {
-                ThemeName    = "ConsoleDefault",
-                Monochrome = false,
-                MonochromeColor = new LoggingColor(50, 50, 50), // ConsoleColor.DarkGray
-                TextColor    = new LoggingColor(50, 50, 50),    // ConsoleColor.DarkGray
-                TypeColor    = new LoggingColor(0, 255, 255),   // ConsoleColor.Cyan
-                FatalColor   = new LoggingColor(255, 0, 255),   // ConsoleColor.Magenta
-                ErrorColor   = new LoggingColor(255, 0, 0),     // ConsoleColor.Red
-                WarningColor = new LoggingColor(255, 255, 0),   // ConsoleColor.Yellow
-                InfoColor    = new LoggingColor(255, 255, 255), // ConsoleColor.White
-                DebugColor   = new LoggingColor(0, 0, 255),     // ConsoleColor.Blue
-                TraceColor   = new LoggingColor(50, 50, 50),    // ConsoleColor.DarkGray
+                ThemeName       = "ConsoleDefault",
+                Monochrome      = false,
+                MonochromeColor = new LoggingColor(50, 50, 50),    // ConsoleColor.DarkGray
+                TextColor       = new LoggingColor(255, 255, 255), // ConsoleColor.White
+                TypeColor       = new LoggingColor(0, 255, 255),   // ConsoleColor.Cyan
+                FatalColor      = new LoggingColor(255, 0, 255),   // ConsoleColor.Magenta
+                ErrorColor      = new LoggingColor(255, 0, 0),     // ConsoleColor.Red
+                WarningColor    = new LoggingColor(255, 255, 0),   // ConsoleColor.Yellow
+                InfoColor       = new LoggingColor(255, 255, 255), // ConsoleColor.White
+                DebugColor      = new LoggingColor(0, 0, 255),     // ConsoleColor.Blue
+                TraceColor      = new LoggingColor(50, 50, 50),    // ConsoleColor.DarkGray
+                AuditColor      = new LoggingColor(0, 0, 255),     // ConsoleColor.Blue
             };
         }
 
         /// <summary> Monochrome color scheme for a terminal. </summary>
-        public static Theme HackerGreenTheme() {
+        public static Theme HackerGreen() {
             return new Theme {
                 ThemeName    = "HackerGreen",
                 Monochrome = true,
@@ -114,7 +121,7 @@ namespace Savage.Logs {
         }
 
         /// <summary> Monochrome color scheme for a terminal. </summary>
-        public static Theme MonochromeWhiteTheme() {
+        public static Theme MonochromeWhite() {
             return new Theme {
                 ThemeName    = "MonochromeWhite",
                 Monochrome = true,
@@ -123,13 +130,14 @@ namespace Savage.Logs {
         }
 
         /// <summary> Monochrome color scheme for a terminal. </summary>
-        public static Theme MonochromeGrayTheme() {
+        public static Theme MonochromeGray() {
             return new Theme {
                 ThemeName    = "MonochromeWhite",
                 Monochrome = true,
                 MonochromeColor = new LoggingColor(128, 128, 128)
             };
         }
+        
         #endregion Construction
 
         /// <summary> Gets the appropriate color for a specific verbosity level. </summary>
@@ -138,12 +146,13 @@ namespace Savage.Logs {
                 return MonochromeColor;
 
             switch (verbosity) {
-                case Verbosity.Trace: return traceColor;
-                case Verbosity.Debug: return debugColor;
-                case Verbosity.Info: return infoColor;
-                case Verbosity.Warning: return warningColor;
-                case Verbosity.Error: return errorColor;
-                case Verbosity.Fatal: return fatalColor;
+                case Verbosity.Trace:   return _traceColor;
+                case Verbosity.Debug:   return _debugColor;
+                case Verbosity.Info:    return _infoColor;
+                case Verbosity.Warning: return _warningColor;
+                case Verbosity.Error:   return _errorColor;
+                case Verbosity.Fatal:   return _fatalColor;
+                case Verbosity.Audit:   return _auditColor;
                 default: // default case should never be hit
                     throw new NotImplementedException($"{nameof(Verbosity)} {verbosity} is not known!");
             };
